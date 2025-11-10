@@ -135,9 +135,34 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     Serial.print("BLE Device found: ");
     Serial.println(advertisedDevice.toString().c_str());
 
-    // Check if the device name matches our server
-    if (advertisedDevice.getName() == BLE_SERVER_NAME) {
-      Serial.println("Found our server!");
+    // Debug: Print device name
+    Serial.print("  Device Name: '");
+    Serial.print(advertisedDevice.getName().c_str());
+    Serial.println("'");
+
+    // Debug: Check if device has our service UUID
+    if (advertisedDevice.haveServiceUUID()) {
+      Serial.print("  Has Service UUID: ");
+      Serial.println(advertisedDevice.getServiceUUID().toString().c_str());
+    }
+
+    // Check by Service UUID (more reliable than name)
+    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(BLEUUID(SERVICE_UUID))) {
+      Serial.println(">>> Found our server by Service UUID!");
+
+      // Stop scanning
+      BLEDevice::getScan()->stop();
+
+      // Save the device reference
+      myDevice = new BLEAdvertisedDevice(advertisedDevice);
+
+      // Set flag to connect
+      doConnect = true;
+      doScan = false;
+    }
+    // Fallback: Check by name
+    else if (advertisedDevice.getName() == BLE_SERVER_NAME) {
+      Serial.println(">>> Found our server by Name!");
 
       // Stop scanning
       BLEDevice::getScan()->stop();
